@@ -27,6 +27,7 @@ Array *create_array (int capacity) {
   arr->count = 0;
   // Allocate memory for elements
   arr->elements = malloc(sizeof(char*) * capacity);
+  return arr;
 }
 
 
@@ -36,10 +37,11 @@ Array *create_array (int capacity) {
 void destroy_array(Array *arr) {
   
   // Free all elements
-  for (int i = 0; i < len(arr); i++) {
+  for (int i = 0; i < arr->count; i++) {
     free(arr->elements[i]);
   }
   // Free array
+  free(arr->elements);
   free(arr);
 }
 
@@ -50,13 +52,14 @@ void destroy_array(Array *arr) {
 void resize_array(Array *arr) {
 
   // Create a new element storage with double capacity
-
+  char **new_storage = malloc(2 * arr->capacity * sizeof(arr->elements[0]));
   // Copy elements into the new storage
-
+  memcpy(new_storage, arr->elements, arr->count * sizeof(arr->elements[0]));
   // Free the old elements array (but NOT the strings they point to)
-
+  free(arr->elements);
   // Update the elements and capacity to new values
-
+  arr->elements = new_storage;
+  arr->capacity = 2 * arr->capacity;
 }
 
 
@@ -77,7 +80,7 @@ char *arr_read(Array *arr, int index) {
   // Throw an error if the index is greater or equal to than the current count
   if (index >= arr->count) {
     fprintf(stderr, "Index is too large");
-    exit(1);
+    return NULL;
   }
   // Otherwise, return the element at the given index
   return arr->elements[index]; 
@@ -90,24 +93,24 @@ char *arr_read(Array *arr, int index) {
  * Store the VALUE of the given string, not the REFERENCE
  *****/
 void arr_insert(Array *arr, char *element, int index) {
-  int count = arr->count;
+  // int i = arr->count;
   // Throw an error if the index is greater than the current count
-  if (index > count) {
+  if (index > arr->count) {
     fprintf(stderr, "Index is greater than current count");
     exit(1);
   }
   // Resize the array if the number of elements is over capacity
-  if (arr->count > arr->capacity) {
+  if (arr->count >= arr->capacity) {
     resize_array(arr);
   }
   // Move every element after the insert index to the right one position
-  for (int i = count; index < i; i--) {
+  for (int i = arr->count; index < i; i--) {
     arr->elements[i] = arr->elements[i - 1];
   }
   // Copy the element (hint: use `strdup()`) and add it to the array
   arr->elements[index] = strdup(element);
   // Increment count by 1
-  count++;
+  arr->count++;
 }
 
 /*****
@@ -117,9 +120,8 @@ void arr_append(Array *arr, char *element) {
 
   // Resize the array if the number of elements is over capacity
   // or throw an error if resize isn't implemented yet.
-  if (arr->count > arr->capacity) {
-    fprintf(stderr, "The array is over capacity");
-    exit(1);
+  if (arr->count >= arr->capacity) {
+    resize_array(arr);
   }
   // Copy the element and add it to the end of the array
   arr->elements[arr->count] = strdup(element);
@@ -134,14 +136,27 @@ void arr_append(Array *arr, char *element) {
  * Throw an error if the value is not found.
  *****/
 void arr_remove(Array *arr, char *element) {
-
+  
   // Search for the first occurence of the element and remove it.
   // Don't forget to free its memory!
+  for (int i = 0; i < arr->count; i++) {
+    if (strcmp(arr->elements[i], element) == 0) {
+      free(arr->elements[i]);\
 
-  // Shift over every element after the removed element to the left one position
-
-  // Decrement count by 1
-
+      for (int r = i; r < arr->count - 1; r++) {
+        arr->elements[r] = arr->elements[r + 1];
+      }
+      // Decrement count by 1
+      arr->count--;
+      break;
+        
+    }
+    else {
+      fprintf(stderr, "Element not in the array.\n");
+    }
+  
+  }
+  return; 
 }
 
 
@@ -167,14 +182,20 @@ int main(void)
   Array *arr = create_array(1);
 
   arr_insert(arr, "STRING1", 0);
+  arr_print(arr);
   arr_append(arr, "STRING4");
+  arr_print(arr);
   arr_insert(arr, "STRING2", 0);
+  arr_print(arr);
   arr_insert(arr, "STRING3", 1);
   arr_print(arr);
-  arr_remove(arr, "STRING3");
+  arr_remove(arr, "STRING4");
+  arr_print(arr);
+  arr_remove(arr, "STRING2");
   arr_print(arr);
 
   destroy_array(arr);
+ 
 
   return 0;
 }
